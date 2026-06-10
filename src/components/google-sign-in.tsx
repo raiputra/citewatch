@@ -12,7 +12,12 @@ export function GoogleSignIn() {
       disabled={loading}
       onClick={async () => {
         setLoading(true);
-        await signIn.social({ provider: "google", callbackURL: "/dashboard" });
+        await signIn.social({
+          provider: "google",
+          callbackURL: "/dashboard",
+          // A blocked sign-up (seat cap) lands back here with ?error=…
+          errorCallbackURL: "/",
+        });
       }}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>

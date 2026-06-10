@@ -1,12 +1,23 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/session";
+import { signupCap, userCount } from "@/lib/auth";
 import { GoogleSignIn } from "@/components/google-sign-in";
 import { Footer } from "@/components/footer";
 import { ENGINES, FREE_CREDITS } from "@/lib/constants";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const user = await getSessionUser();
   if (user) redirect("/dashboard");
+
+  const { error } = await searchParams;
+  const cap = signupCap();
+  const taken = cap > 0 ? await userCount() : 0;
+  const seatsLeft = cap > 0 ? Math.max(0, cap - taken) : null;
+  const full = seatsLeft === 0;
 
   return (
     <main className="flex-1 flex flex-col">
@@ -38,12 +49,30 @@ export default async function Home() {
               Perplexity, and Google AI Overviews — in any language, from any
               location. Open source, with {FREE_CREDITS} free checks to start.
             </p>
+
+            {error && (
+              <div className="mb-6 max-w-[520px] px-4 py-3 border border-accent/40 bg-accent/8 rounded-[2px] text-sm text-accent">
+                Sign-up is closed for now — all early-access seats are taken.
+                Already have an account? Signing in still works.
+              </div>
+            )}
+
             <div className="flex gap-3.5 flex-wrap items-center">
               <GoogleSignIn />
-              <span className="text-sm text-muted">
-                No card required · bring your own keys anytime
-              </span>
+              {seatsLeft !== null ? (
+                full ? (
+                  <span className="tag tag-red">All {cap} early-access seats taken</span>
+                ) : (
+                  <span className="tag tag-green">
+                    {seatsLeft} of {cap} early-access seats left
+                  </span>
+                )
+              ) : null}
             </div>
+            <p className="text-sm text-muted mt-4">
+              No card required · bring your own keys anytime
+              {full && " · existing accounts can still sign in"}
+            </p>
           </div>
 
           <div className="border border-line rounded-[2px] bg-bg-alt p-10">
