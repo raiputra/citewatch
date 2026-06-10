@@ -1,65 +1,74 @@
-import Image from "next/image";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/session";
+import { GoogleSignIn } from "@/components/google-sign-in";
+import { Footer } from "@/components/footer";
+import { ENGINES, FREE_CREDITS } from "@/lib/constants";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getSessionUser();
+  if (user) redirect("/dashboard");
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+    <main className="flex-1 flex flex-col">
+      <nav className="border-b border-line">
+        <div className="max-w-[1200px] mx-auto px-12 py-5 flex items-center justify-between">
+          <span className="font-serif text-xl tracking-tight">Citewatch</span>
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            className="text-sm font-medium opacity-75 hover:opacity-100 transition-opacity"
+            href="https://github.com/raiputra/citewatch"
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
+            GitHub
           </a>
         </div>
-      </main>
-    </div>
+      </nav>
+
+      <section className="flex-1 flex items-center">
+        <div className="max-w-[1200px] mx-auto px-12 py-24 grid md:grid-cols-2 gap-20 items-center">
+          <div>
+            <span className="mono block text-primary mb-5">
+              Generative engine optimization
+            </span>
+            <h1 className="text-[clamp(2.5rem,4.8vw,4.1rem)] mb-6 text-pretty">
+              Know when AI answers cite your brand.
+            </h1>
+            <p className="text-lg font-light text-muted max-w-[520px] mb-10 text-pretty">
+              Track citations and mentions across ChatGPT, Claude, Gemini, Grok,
+              Perplexity, and Google AI Overviews — in any language, from any
+              location. Open source, with {FREE_CREDITS} free checks to start.
+            </p>
+            <div className="flex gap-3.5 flex-wrap items-center">
+              <GoogleSignIn />
+              <span className="text-sm text-muted">
+                No card required · bring your own keys anytime
+              </span>
+            </div>
+          </div>
+
+          <div className="border border-line rounded-[2px] bg-bg-alt p-10">
+            <span className="mono block text-muted mb-6">Engines covered</span>
+            <ul className="flex flex-col">
+              {ENGINES.map((e, i) => (
+                <li
+                  key={e.id}
+                  className="flex items-baseline gap-5 py-3.5 border-b border-line last:border-b-0"
+                >
+                  <span className="mono text-primary w-6 shrink-0">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="font-medium">{e.label}</span>
+                  <span className="ml-auto mono text-muted">
+                    {e.id === "ai-overview" ? "serp capture" : "native web search"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </main>
   );
 }

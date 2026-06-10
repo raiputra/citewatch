@@ -1,26 +1,157 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Design tokens shared with the Raiputra landing site */
+@theme {
+  --color-bg: #fafaf9;
+  --color-bg-alt: #f3f3f1;
+  --color-bg-card: #ebebea;
+  --color-primary: #4d6d91;
+  --color-primary-dk: #3a5370;
+  --color-ink: #1c1e22;
+  --color-muted: #6b6862;
+  --color-accent: #b8857a;
+  --color-line: #e0dedb;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-serif: var(--font-dm-serif), serif;
+  --font-sans: var(--font-dm-sans), sans-serif;
+  --font-mono: var(--font-plex-mono), monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.13;
+  letter-spacing: -0.02em;
+}
+
+/* IBM Plex Mono eyebrow/label treatment from the landing */
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.69rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  border-radius: 2px;
+  cursor: pointer;
+  border: none;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s,
+    transform 0.15s;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--color-primary-dk);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-line);
+}
+.btn-ghost:hover {
+  border-color: var(--color-ink);
+  background: rgba(28, 30, 34, 0.05);
+}
+
+.field {
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  color: var(--color-ink);
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.field:focus {
+  border-color: var(--color-primary);
+}
+.field::placeholder {
+  color: var(--color-muted);
+  opacity: 0.65;
+}
+select.field {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236B6862' stroke-width='1.5' stroke-linecap='round'/%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: 2px;
+  transition: border-color 0.22s;
+}
+.card:hover {
+  border-color: var(--color-primary);
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: 0.63rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  background: rgba(77, 109, 145, 0.1);
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+.tag-green {
+  color: #3a6b48;
+  background: rgba(58, 107, 72, 0.12);
+}
+.tag-red {
+  color: var(--color-accent);
+  background: rgba(184, 133, 122, 0.12);
+}
+.tag-pending {
+  color: var(--color-muted);
+  background: rgba(107, 104, 98, 0.1);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }
