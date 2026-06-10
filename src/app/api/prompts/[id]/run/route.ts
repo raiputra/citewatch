@@ -1,6 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { and, eq } from "drizzle-orm";
-import { db, prompt as promptTable } from "@/db";
+import { db, prompt as promptTable, run as runTable } from "@/db";
 import { getSessionUser } from "@/lib/session";
 import { startPromptRun, executePromptRun } from "@/lib/engines/run";
 
@@ -21,6 +21,20 @@ export async function POST(
     .from(promptTable)
     .where(and(eq(promptTable.id, id), eq(promptTable.userId, u.id)));
   if (!p) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // One in-flight batch per prompt — blocks run-spamming and accidental
+  // double-clicks alike
+  const [inFlight] = await db
+    .select({ id: runTable.id })
+    .from(runTable)
+    .where(and(eq(runTable.promptId, p.id), eq(runTable.status, "pending")))
+    .limit(1);
+  if (inFlight) {
+    return NextResponse.json(
+      { error: "A check is already running for this prompt. Wait for it to finish." },
+      { status: 409 },
+    );
+  }
 
   try {
     const { planned, skipped } = await startPromptRun(p);
