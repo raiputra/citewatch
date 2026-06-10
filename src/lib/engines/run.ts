@@ -87,13 +87,40 @@ export async function startPromptRun(p: PromptRow): Promise<{
 
   const unavailable = candidates.filter((e) => !e.runnable);
 
+  // Platform-wide daily budget for credit-funded runs. Caps worst-case
+  // spend from credit farming or a viral spike; BYOK runs are unaffected.
+  // DAILY_FREE_RUN_LIMIT=0 disables the cap. The count-then-reserve gap
+  // means a small overshoot is possible under concurrency — bounded by
+  // engines-per-batch, which is fine for a budget guard.
+  const dailyLimit = parseInt(process.env.DAILY_FREE_RUN_LIMIT ?? "200", 10);
+  let dailyRemaining = Infinity;
+  if (dailyLimit > 0) {
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(runTable)
+      .where(
+        and(
+          eq(runTable.usedOwnKey, false),
+          sql`${runTable.createdAt} >= date_trunc('day', now())`,
+          // "Skipped:" rows never executed an engine — don't count them
+          sql`(${runTable.error} IS NULL OR ${runTable.error} NOT LIKE 'Skipped:%')`,
+        ),
+      );
+    dailyRemaining = Math.max(0, dailyLimit - count);
+  }
+
   // Reserve one credit per non-BYOK engine, atomically. Engines that can't
   // get a reservation are skipped — never executed on the platform's dime.
   const toRun: typeof candidates = [];
   const skipped: typeof candidates = [];
+  const budgetSkipped: typeof candidates = [];
   for (const e of candidates.filter((c) => c.runnable)) {
     if (!e.usesCredit) {
       toRun.push(e);
+      continue;
+    }
+    if (dailyRemaining <= 0) {
+      budgetSkipped.push(e);
       continue;
     }
     const reserved = await db
@@ -101,8 +128,12 @@ export async function startPromptRun(p: PromptRow): Promise<{
       .set({ credits: sql`${userTable.credits} - 1` })
       .where(and(eq(userTable.id, p.userId), sql`${userTable.credits} > 0`))
       .returning({ credits: userTable.credits });
-    if (reserved.length > 0) toRun.push(e);
-    else skipped.push(e);
+    if (reserved.length > 0) {
+      toRun.push(e);
+      dailyRemaining--;
+    } else {
+      skipped.push(e);
+    }
   }
 
   const batchId = crypto.randomUUID();
@@ -128,6 +159,17 @@ export async function startPromptRun(p: PromptRow): Promise<{
         error: "Skipped: no API key available for this engine. Add your own key in Settings.",
       }),
     ),
+    ...budgetSkipped.map(({ engine }) =>
+      db.insert(runTable).values({
+        promptId: p.id,
+        userId: p.userId,
+        batchId,
+        engine,
+        status: "error",
+        error:
+          "Skipped: today's free check budget is used up. Add your own API key in Settings for unlimited checks, or try again tomorrow. Your credit was not spent.",
+      }),
+    ),
   ]);
 
   const planned = await Promise.all(
@@ -147,7 +189,10 @@ export async function startPromptRun(p: PromptRow): Promise<{
     }),
   );
 
-  return { planned, skipped: skipped.length + unavailable.length };
+  return {
+    planned,
+    skipped: skipped.length + unavailable.length + budgetSkipped.length,
+  };
 }
 
 /**
